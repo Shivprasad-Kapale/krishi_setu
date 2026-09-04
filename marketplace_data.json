@@ -1,0 +1,54 @@
+{
+    "listings": [
+        {
+            "id": "L101",
+            "farmer_name": "Ramesh Patil",
+            "district": "Nashik, Maharashtra",
+            "crop": "Wheat (\u0917\u0947\u0939\u0942\u0902)",
+            "quantity_quintals": 150,
+            "expected_price": 2350,
+            "harvest_date": "2026-04-15",
+            "status": "Available / Open for Contract"
+        },
+        {
+            "id": "L102",
+            "farmer_name": "Gurpreet Singh",
+            "district": "Ludhiana, Punjab",
+            "crop": "Paddy / Rice (\u0927\u093e\u0928)",
+            "quantity_quintals": 300,
+            "expected_price": 2400,
+            "harvest_date": "2026-11-20",
+            "status": "Under Negotiation"
+        },
+        {
+            "id": "L103",
+            "farmer_name": "Suresh Deshmukh",
+            "district": "Indore, Madhya Pradesh",
+            "crop": "Soybean (\u0938\u094b\u092f\u093e\u092c\u0940\u0928)",
+            "quantity_quintals": 80,
+            "expected_price": 4700,
+            "harvest_date": "2026-10-10",
+            "status": "Available / Open for Contract"
+        }
+    ],
+    "buyer_demands": [
+        {
+            "id": "B201",
+            "buyer_org": "AgroCorp Foods Ltd.",
+            "crop": "Wheat (\u0917\u0947\u0939\u0942\u0902)",
+            "required_quintals": 1000,
+            "offered_price": 2380,
+            "delivery_location": "Mumbai Hub",
+            "contact": "procurement@agrocorp.in"
+        },
+        {
+            "id": "B202",
+            "buyer_org": "National Retail Syndicate",
+            "crop": "Tomato (\u091f\u092e\u093e\u091f\u0930)",
+            "required_quintals": 250,
+            "offered_price": 2200,
+            "delivery_location": "Delhi Mandi",
+            "contact": "supply@nrsretail.com"
+        }
+    ]
+}
