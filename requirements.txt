@@ -9,3 +9,6 @@ scikit-learn>=1.4.0
 python-pptx>=1.0.0
 lxml>=4.9.0
 xlsxwriter>=3.1.0
+deep-translator>=1.11.4
+beautifulsoup4>=4.9.1
+
