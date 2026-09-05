@@ -29,6 +29,16 @@
             "expected_price": 4700,
             "harvest_date": "2026-10-10",
             "status": "Available / Open for Contract"
+        },
+        {
+            "id": "L104",
+            "farmer_name": "Shivprasad Sunil Kapale",
+            "district": "Jalna, Maharashtra",
+            "crop": "Wheat",
+            "quantity_quintals": 100,
+            "expected_price": 2300.0,
+            "harvest_date": "2026-09-05",
+            "status": "Available / Open for Contract"
         }
     ],
     "buyer_demands": [

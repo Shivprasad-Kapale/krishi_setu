@@ -15,6 +15,7 @@ from modules.weather_service import get_weather_forecast, generate_weather_advis
 from modules.crop_doctor import analyze_crop_leaf
 from modules.marketplace import load_data, add_farmer_listing, add_buyer_demand
 from modules.auth import init_auth_db, register_user, authenticate_user
+from modules.translator_service import translate_text
 from modules.krishisarthi import get_krishisarthi_response
 from modules.farmer_mode import render_farmer_simple_mode
 
@@ -287,20 +288,22 @@ else:
     ]
     tabs = st.tabs(tab_titles)
 
-# -------------------------------------------------------------
+    # -------------------------------------------------------------
     # TAB 1: Smart Crop Planner (Basic & Precision Modes)
     # -------------------------------------------------------------
     with tabs[0]:
-        st.markdown(f'<p class="main-header">{t["nav_planner"]}</p>', unsafe_allow_html=True)
-        st.markdown(f'<p class="sub-header">Advanced crop recommendation engine combining soil suitability, market demand and expected ROI for **{selected_district}, {selected_state}**.</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="main-header">{translate_text(t["nav_planner"], lang_code)}</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="sub-header">{translate_text("Advanced crop recommendation engine combining soil suitability, market demand and expected ROI for", lang_code)} **{selected_district}, {selected_state}**.</p>', unsafe_allow_html=True)
 
         # Basic Mode Inputs
         c_mode1, c_mode2 = st.columns(2)
         with c_mode1:
-            previous_crop = st.selectbox("Previous Grown Crop / पिछली फसल / मागील पीक", ["None / None", "Wheat / गेहूं / गहू", "Paddy / धान", "Soybean / सोयाबीन", "Cotton / कपास", "Mustard / सरसों", "Chana / चना"])
-            farming_goal = st.selectbox("Farming Goal / खेती का लक्ष्य / शेतीचे उद्दिष्ट", ["Maximize Profit / अधिकतम लाभ", "Low Risk & Stable Yield / कम जोखिम", "Soil Health Restoration / मिट्टी सुधार"])
+            previous_crop = st.selectbox(translate_text("Previous Grown Crop", lang_code), ["None", "Wheat", "Paddy", "Soybean", "Cotton", "Mustard", "Chana"])
+            farming_goal = st.selectbox(translate_text("Farming Goal", lang_code), [translate_text("Maximize Profit", lang_code), translate_text("Low Risk & Stable Yield", lang_code), translate_text("Soil Health Restoration", lang_code)])
         with c_mode2:
-            st.info(f"Active Farm Setup: State: {selected_state} | District: {selected_district} | Soil: {selected_soil} | Land: {land_size} Acres")
+            setup_prefix = "सक्रिय शेती सेटअप" if lang_code == 'mr' else ("सक्रिय कृषि सेटअप" if lang_code == 'hi' else "Active Farm Setup")
+            acres_text = "एकर" if lang_code == 'mr' else ("एकड़" if lang_code == 'hi' else "Acres")
+            st.info(f"{setup_prefix}: {selected_state} | {selected_district} | {selected_soil} | {land_size} {acres_text}")
 
         # Precision Mode Toggle via Button / State
         if "show_precision" not in st.session_state:
@@ -308,36 +311,36 @@ else:
             
         col_btn1, col_btn2 = st.columns([1, 3])
         with col_btn1:
-            if st.button("Advance Soil (Precision Mode)"):
+            if st.button(translate_text("Advance Soil (Precision Mode)", lang_code)):
                 st.session_state["show_precision"] = not st.session_state["show_precision"]
                 
         npk_values = {"ph": 7.0, "nitrogen": 200, "phosphorus": 20, "potassium": 250}
         
         if st.session_state["show_precision"]:
             st.markdown("---")
-            st.subheader("Precision Soil Parameters Setup (Advanced Mode)")
-            precision_method = st.radio("Choose Input Method:", ["Enter NPK + pH manually", "Upload Soil Test Report (PDF/JPG/PNG)"])
+            st.subheader(translate_text("Precision Soil Parameters Setup (Advanced Mode)", lang_code))
+            precision_method = st.radio(translate_text("Choose Input Method:", lang_code), [translate_text("Enter NPK + pH manually", lang_code), translate_text("Upload Soil Test Report (PDF/JPG/PNG)", lang_code)])
             
-            if precision_method == "Upload Soil Test Report (PDF/JPG/PNG)":
-                soil_report_file = st.file_uploader("Upload Soil Test Report", type=["pdf", "jpg", "jpeg", "png"])
+            if "Upload" in precision_method:
+                soil_report_file = st.file_uploader(translate_text("Upload Soil Test Report", lang_code), type=["pdf", "jpg", "jpeg", "png"])
                 if soil_report_file:
-                    with st.spinner("Extracting soil report values with AI..."):
+                    with st.spinner(translate_text("Extracting soil report values with AI...", lang_code)):
                         from modules.precision_planner import parse_soil_report
                         extracted = parse_soil_report(soil_report_file, gemini_api_key)
-                        st.success("Soil parameters successfully extracted from report! Please verify below:")
-                        npk_values["ph"] = st.number_input("Soil pH", value=float(extracted.get("ph", 7.0)), step=0.1)
-                        npk_values["nitrogen"] = st.number_input("Available Nitrogen (kg/ha)", value=int(extracted.get("nitrogen", 200)))
-                        npk_values["phosphorus"] = st.number_input("Available Phosphorus (kg/ha)", value=int(extracted.get("phosphorus", 20)))
-                        npk_values["potassium"] = st.number_input("Available Potassium (kg/ha)", value=int(extracted.get("potassium", 250)))
+                        st.success(translate_text("Soil parameters successfully extracted from report! Please verify below:", lang_code))
+                        npk_values["ph"] = st.number_input(translate_text("Soil pH", lang_code), value=float(extracted.get("ph", 7.0)), step=0.1)
+                        npk_values["nitrogen"] = st.number_input(translate_text("Available Nitrogen (kg/ha)", lang_code), value=int(extracted.get("nitrogen", 200)))
+                        npk_values["phosphorus"] = st.number_input(translate_text("Available Phosphorus (kg/ha)", lang_code), value=int(extracted.get("phosphorus", 20)))
+                        npk_values["potassium"] = st.number_input(translate_text("Available Potassium (kg/ha)", lang_code), value=int(extracted.get("potassium", 250)))
             else:
                 col_p1, col_p2, col_p3, col_p4 = st.columns(4)
-                npk_values["ph"] = col_p1.number_input("Soil pH", min_value=4.0, max_value=10.0, value=7.0, step=0.1)
+                npk_values["ph"] = col_p1.number_input(translate_text("Soil pH", lang_code), min_value=4.0, max_value=10.0, value=7.0, step=0.1)
                 npk_values["nitrogen"] = col_p2.number_input("Nitrogen (N)", min_value=50, max_value=500, value=200)
                 npk_values["phosphorus"] = col_p3.number_input("Phosphorus (P)", min_value=5, max_value=100, value=20)
                 npk_values["potassium"] = col_p4.number_input("Potassium (K)", min_value=50, max_value=600, value=250)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button(t["btn_plan"], type="primary"):
+        if st.button(translate_text(t["btn_plan"], lang_code), type="primary"):
             from modules.precision_planner import advanced_precision_recommendation
             recommendations = advanced_precision_recommendation(
                 selected_state, selected_district, selected_soil, season, water_source, budget, farming_goal, previous_crop, npk_values
@@ -348,19 +351,17 @@ else:
             recs = st.session_state["recommendations"]
             top_crop = recs[0]
             
-            st.markdown(f"### {t['best_roi']}: **{top_crop['name']}**")
+            st.markdown(f"### {translate_text(t['best_roi'], lang_code)}: **{top_crop['name']}**")
             
-            # 4-Column Metric Cards with Badge Styling for ROI
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Est. Total Investment", f"₹{top_crop['total_cost']:,}")
-            col2.metric("Est. Gross Revenue", f"₹{top_crop['estimated_revenue']:,}")
-            col3.metric("Est. Net Profit", f"₹{top_crop['estimated_net_profit']:,}", f"{top_crop['roi_percentage']}% ROI", delta_color="normal")
-            col4.metric("Market Demand", top_crop['market_demand'])
+            col1.metric(translate_text("Est. Total Investment", lang_code), f"₹{top_crop['total_cost']:,}")
+            col2.metric(translate_text("Est. Gross Revenue", lang_code), f"₹{top_crop['estimated_revenue']:,}")
+            col3.metric(translate_text("Est. Net Profit", lang_code), f"₹{top_crop['estimated_net_profit']:,}", f"{top_crop['roi_percentage']}% ROI", delta_color="normal")
+            col4.metric(translate_text("Market Demand", lang_code), translate_text(top_crop['market_demand'], lang_code))
             
             st.markdown("---")
             
-            # Comparative Visualization Bar Chart (Top 5 Crops: Net Profit vs Investment)
-            st.subheader("Top 5 Crops: Comparative Net Profit vs Investment (₹)")
+            st.subheader(translate_text("Top 5 Crops: Comparative Net Profit vs Investment (₹)", lang_code))
             top_5_recs = recs[:5]
             df_comp = pd.DataFrame({
                 "Crop": [c["name"] for c in top_5_recs],
@@ -373,32 +374,32 @@ else:
             st.plotly_chart(fig_comp, use_container_width=True)
             
             st.markdown("---")
-            st.subheader("Ranked Crop Suitability & Detailed Reasoning")
-            st.caption("Note: Recommendations are agronomic estimates based on mathematical models and current market data, not guarantees.")
+            st.subheader(translate_text("Ranked Crop Suitability & Detailed Reasoning", lang_code))
+            st.caption(translate_text("Note: Recommendations are agronomic estimates based on mathematical models and current market data, not guarantees.", lang_code))
             
             for idx, crop in enumerate(recs):
                 match_badge = "🟢" if crop['score'] >= 75 else ("🟡" if crop['score'] >= 50 else "🟠")
-                risk_color = "🟢 Low Risk" if crop['risk_level'] == "Low" else ("🟡 Medium Risk" if crop['risk_level'] == "Medium" else "🔴 High Risk")
+                risk_color = translate_text("Low Risk", lang_code) if crop['risk_level'] == "Low" else (translate_text("Medium Risk", lang_code) if crop['risk_level'] == "Medium" else translate_text("High Risk", lang_code))
                 
-                expander_label = f"#{idx+1} {crop['name']} | {match_badge} {crop['score']}% Match | ₹{crop['estimated_net_profit']:,} net | {crop['duration_days']} Days | {risk_color}"
+                expander_label = f"#{idx+1} {crop['name']} | {match_badge} {crop['score']}% {translate_text('Match', lang_code)} | ₹{crop['estimated_net_profit']:,} {translate_text('net', lang_code)} | {crop['duration_days']} {translate_text('Days', lang_code)} | {risk_color}"
                 
                 with st.expander(expander_label):
-                    # Mini 4-Column Grid for Key Stats
                     sc1, sc2, sc3, sc4 = st.columns(4)
-                    sc1.metric("Cultivation Cost", f"₹{crop['total_cost']:,}")
-                    sc2.metric("Expected Yield", f"{crop['expected_yield']} Qtl")
-                    sc3.metric("Gross Revenue", f"₹{crop['estimated_revenue']:,}")
-                    sc4.metric("Crop Duration", f"{crop['duration_days']} Days")
+                    sc1.metric(translate_text("Cultivation Cost", lang_code), f"₹{crop['total_cost']:,}")
+                    sc2.metric(translate_text("Expected Yield", lang_code), f"{crop['expected_yield']} Qtl")
+                    sc3.metric(translate_text("Gross Revenue", lang_code), f"₹{crop['estimated_revenue']:,}")
+                    sc4.metric(translate_text("Crop Duration", lang_code), f"{crop['duration_days']} {translate_text('Days', lang_code)}")
                     
                     st.markdown("---")
-                    st.markdown("**Agronomic Rationale & Suitability Analysis:**")
+                    st.markdown(f"**{translate_text('Agronomic Rationale & Suitability Analysis:', lang_code)}**")
                     for r in crop['reasons']:
+                        translated_r = translate_text(r, lang_code)
                         if "✅" in r or "Optimal" in r or "favorable" in r or "Aligned" in r:
-                            st.success(f"✔ {r.replace('✅ ', '')}")
+                            st.success(f"✔ {translated_r.replace('✅ ', '')}")
                         elif "⚠️" in r or "marginal" in r or "Warning" in r:
-                            st.warning(f"⚠ {r.replace('⚠️ ', '')}")
+                            st.warning(f"⚠ {translated_r.replace('⚠️ ', '')}")
                         else:
-                            st.info(f"ℹ {r}")
+                            st.info(f"ℹ {translated_r}")
 
     # -------------------------------------------------------------
     # TAB 2: Mandi Price Forecast & Analytics
@@ -469,7 +470,7 @@ else:
         lon = INDIAN_LOCATIONS[selected_state]["lon"]
         
         forecast = get_weather_forecast(lat, lon)
-        advisories = generate_weather_advisory(forecast)
+        advisories = generate_weather_advisory(forecast, lang_code)
 
         # Display Advisories
         st.subheader(t.get("auto_advisories", "Automated Agronomic Weather Advisories"))
@@ -505,16 +506,16 @@ else:
         tasks = crop_obj['fertilizer_schedule']
         for idx, t_item in enumerate(tasks):
             col1, col2, col3 = st.columns([1, 4, 1])
-            col1.markdown(f"**Day {t_item['day']}**")
-            col2.markdown(t_item['task'])
-            status = col3.checkbox(t.get("completed", "Completed"), key=f"task_{selected_crop_ops}_{idx}")
+            col1.markdown(f"**{translate_text('Day', lang_code)} {t_item['day']}**")
+            col2.markdown(translate_text(t_item['task'], lang_code))
+            status = col3.checkbox(translate_text("Completed", lang_code), key=f"task_{selected_crop_ops}_{idx}")
 
         st.markdown("---")
         st.subheader(t.get("pest_management", "Common Pest & Disease Management Protocols"))
         for dis in crop_obj['common_diseases']:
-            with st.expander(f"{dis['name']}"):
-                st.markdown(f"**Symptoms:** {dis['symptom']}")
-                st.markdown(f"**Recommended Remedy:** {dis['remedy']}")
+            with st.expander(translate_text(dis['name'], lang_code)):
+                st.markdown(f"**{translate_text('Symptoms:', lang_code)}** {translate_text(dis['symptom'], lang_code)}")
+                st.markdown(f"**{translate_text('Recommended Remedy:', lang_code)}** {translate_text(dis['remedy'], lang_code)}")
 
     # -------------------------------------------------------------
     # TAB 6: Direct Marketplace & Contracts

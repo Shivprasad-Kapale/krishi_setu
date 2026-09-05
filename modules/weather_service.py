@@ -77,13 +77,15 @@ def get_weather_forecast(lat, lon):
         st.error(f"Weather telemetry error: {str(e)}")
         return get_cached_forecast()
 
-def generate_weather_advisory(forecast):
+def generate_weather_advisory(forecast, lang_code="en"):
     """
-    Analyzes meteorological parameters to generate professional agronomic warnings and farm advice.
+    Analyzes meteorological parameters to generate professional agronomic warnings and farm advice
+    with full multilingual translation support.
     """
+    from modules.translator_service import translate_text
+    
     advisories = []
     
-    # Check key naming compatibility (Rain Prob (%) vs rain_prob)
     def get_rain(f):
         return f.get("Rain Prob (%)", f.get("rain_prob", 10))
         
@@ -101,36 +103,26 @@ def generate_weather_advisory(forecast):
     high_uv_days = [get_date(f) for f in forecast if get_uv(f) > 8]
     
     if high_rain_days:
-        advisories.append({
-            "type": "warning",
-            "title": "Heavy Precipitation Warning",
-            "message": f"High probability of rainfall (>60%) detected on {', '.join(high_rain_days)}. Postpone nitrogen fertilizer (Urea) top-dressing and pesticide application to prevent agricultural runoff."
-        })
+        title = translate_text("Heavy Precipitation Warning", lang_code)
+        msg = translate_text(f"High probability of rainfall (>60%) detected on {', '.join(high_rain_days)}. Postpone nitrogen fertilizer (Urea) top-dressing and pesticide application to prevent agricultural runoff.", lang_code)
+        advisories.append({"type": "warning", "title": title, "message": msg})
     else:
-        advisories.append({
-            "type": "success",
-            "title": "Favorable Spraying Window",
-            "message": "Meteorological conditions are stable for the next 48-72 hours. Optimal window for foliar feeding and pesticide application."
-        })
+        title = translate_text("Favorable Spraying Window", lang_code)
+        msg = translate_text("Meteorological conditions are stable for the next 48-72 hours. Optimal window for foliar feeding and pesticide application.", lang_code)
+        advisories.append({"type": "success", "title": title, "message": msg})
         
     if high_wind_days:
-        advisories.append({
-            "type": "warning",
-            "title": "High Wind Advisory",
-            "message": f"Strong wind speeds exceeding 20 km/h expected on {', '.join(high_wind_days)}. Avoid aerial or boom sprayer application to prevent drift."
-        })
+        title = translate_text("High Wind Advisory", lang_code)
+        msg = translate_text(f"Strong wind speeds exceeding 20 km/h expected on {', '.join(high_wind_days)}. Avoid aerial or boom sprayer application to prevent drift.", lang_code)
+        advisories.append({"type": "warning", "title": title, "message": msg})
         
     if high_uv_days:
-        advisories.append({
-            "type": "info",
-            "title": "High Solar Radiation Notice",
-            "message": "UV index is peaking above 8. Ensure adequate irrigation during early morning or late evening to minimize soil evaporation loss."
-        })
+        title = translate_text("High Solar Radiation Notice", lang_code)
+        msg = translate_text("UV index is peaking above 8. Ensure adequate irrigation during early morning or late evening to minimize soil evaporation loss.", lang_code)
+        advisories.append({"type": "info", "title": title, "message": msg})
         
-    advisories.append({
-        "type": "info",
-        "title": "Soil Moisture & Irrigation Status",
-        "message": "Root-zone moisture levels are optimal based on rolling evapotranspiration models. Inspect field drainage channels."
-    })
+    title = translate_text("Soil Moisture & Irrigation Status", lang_code)
+    msg = translate_text("Root-zone moisture levels are optimal based on rolling evapotranspiration models. Inspect field drainage channels.", lang_code)
+    advisories.append({"type": "info", "title": title, "message": msg})
     
     return advisories
