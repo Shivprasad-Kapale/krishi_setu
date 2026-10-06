@@ -1,0 +1,240 @@
+KRISHISetu - AGRICULTURAL PLATFORM FLOW DIAGRAM
+================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│  AUTHENTICATION LAYER                                        │
+│  ┌─────────────────┐  Login/Register  ┌─────────────────────┐ │
+│  │   Not Logged    │ ───────────────▶ │   Welcome Screen    │ │
+│  │   In (guest)    │◀─────────────────│   (Language select) │ │
+│  └─────────────────┘                └─────────────────────┘ │
+│         │                                 │                     │
+│         ▼                                 ▼                     ▼
+│  ┌─────────────────┐   Auth Check      ┌─────────────────────┐ │
+│  │   Logged In     │◀───────────────│   Sidebar Menu      │ │
+│  │   (user session)│   (role-based) │   (Navigation & Mode)│ │
+│  └─────────────────┘                └─────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  MAIN NAVIGATION TABS (7 tabs when logged in)                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐           │
+│  │ Tab 1:      │  │ Tab 2:      │  │ Tab 3:      │           │
+│  │ Smart Planner│ │ Mandi Price │ │ AI Crop Doc │           │
+│  └─────────────┘  └─────────────┘  └─────────────┘           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐           │
+│  │ Tab 4:      │  │ Tab 5:      │  │ Tab 6:      │           │
+│  │ Weather     │  │ Marketplace │ │ Krishi-Sarthi│          │
+│  └─────────────┘  └─────────────┘  └─────────────┘           │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 1: SMART CROP PLANNER                                  │
+│  Inputs → Recommendation Engine → Output                       │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer provides: State, District, Soil Type, Land     │       │
+│  │  Size, Season, Water Source, Budget, Goal, Previous    │       │
+│  │  Crop                                                    │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  calculate_crop_recommendations   │
+│    │  Crop Database      │  (weights: soil 25%, season 20%, │
+│    │  (13 crops with      │   budget 20%, water 20%, demand 15%)   │
+│    │   agro params)      │                                         │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Scores ranked 1-100, with      │
+│    │  Multi-factor       │  financial estimates (cost, revenue, │
+│    │  Decision Matrix    │  profit, ROI) and agronomic reasons   │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output: Top 5 ranked crops with                     │ │
+│    │  • Crop name & score (🟢🟡🟠)                          │ │
+│    │  • Net profit, investment, duration, risk level       │ │
+│    │  • Expandable rationale per crop                     │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 2: MANDI PRICE FORECAST                                 │
+│  Commodity Selection → Price Data → Market Advisory             │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer selects commodity: wheat, paddy, soybean, etc. │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  get_mandi_price_history         │
+│    │  Price History      │  (12-month trend + 3-month forecast)│
+│    │  & Market Advisory  │                                         │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Line chart: price trend         │
+│    │  Visualization      │  + Market intelligence box         │
+│    │  (Plotly chart)     │  + Optimal selling window         │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output: Price chart, advisory (best month, outlook, │ │
+│    │  storage rec) + Live Agmarknet APMC rates (optional) │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 3: AI CROP DOCTOR                                       │
+│  Leaf Upload → AI Analysis → Diagnosis                          │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer uploads leaf photo (JPG/PNG)                   │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  analyze_crop_leaf                 │
+│    │  Image Processing   │  (Gemini AI or offline demo)      │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Diagnosis result:                │
+│    │  AI Diagnosis       │  • Disease identification         │
+│    └─────────────────────┘  • Remedies (organic/chemical)   │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output: Diagnosis card with                        │ │
+│    │  • Engine source (Gemini/offline)                   │ │
+│    │  • Treatment recommendations                       │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 4: WEATHER & FARM ADVISORY                              │
+│  Location → Weather API → Agronomic Alerts                      │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer selects state + district                       │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  get_weather_forecast              │
+│    │  Forecast (7-day)   │  Open-Meteo API (or cached data)│
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  generate_weather_advisory           │
+│    │  Advisory Engine    │  Rule-based: rain, wind, UV alerts  │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output:                                              │ │
+│    │  • 7-day meteorological outlook table                 │ │
+│    │  • Automated warnings (heavy rain, high wind, high UV)│ │
+│    │  • Irrigation status advisory                       │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 5: OPERATIONS & TASK TRACKER                            │
+│  Crop Selection → Task Checklist → Pest Management              │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer selects active crop from 13 options            │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Crop database lookup                │
+│    │  Crop Schedule      │  Fertilizer/task per day               │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Interactive checkboxes per task   │
+│    │  Task Tracker       │  Mark completed/incomplete          │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output:                                              │ │
+│    │  • Fertilizer/weeding schedule per growth stage       │ │
+│    │  • Common diseases + symptoms + remedies              │ │
+│    │  • Progress tracking via checkboxes                   │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 6: DIRECT MARKETPLACE & CONTRACTS                        │
+│  Listings → Buyer Demands → Potential Contracts                 │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer posts harvest listing (crop, qty, price, date) │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  load_data() + add_farmer_listing    │
+│    │  Marketplace JSON   │  (persisted in marketplace_data.json)│
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Buyer posts demand (crop, qty, price) │
+│    │  Buyer Demand Board │  (persisted same JSON file)            │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output:                                              │ │
+│    │  • Farmer listings cards with crop/qty/price/status   │ │
+│    │  • Buyer demand board with offered price & contact      │ │
+│    │  • Expandable forms to post new listings/demands      │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+         │                                                                     │
+         ▼                                                                     ▼
+
+┌─────────────────────────────────────────────────────────────────┐
+│  FLOW 7: KRISHI-SARTHI BOT (WhatsApp/SMS Simulator)           │
+│  User Query → AI Response → Chat Persistence                    │
+│  ┌────────────────────────────────────────────────────────┐       │
+│  │  Farmer types/query selects preset question             │       │
+│  └─────────────────────▲──────────────────────────────────┘       │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  get_krishisarthi_response           │
+│    │  Query Processing   │  Intent classification (wheat/paddy/weather/price)│
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌─────────────────────┐  Multilingual response (MR/EN/HI)      │
+│    │  Response Generator │  SQLite chat history persistence      │
+│    └─────────────────────┘                                         │
+│                        │                                         │
+│                        ▼                                         │
+│    ┌───────────────────────────────────────────────────────┐ │
+│    │  Output:                                              │ │
+│    │  • Chat history display (farmer vs bot messages)      │ │
+│    │  • Quick preset prompts for common queries            │ │
+│    │  • Text input field for custom questions              │ │
+│    │  • Messages saved to krishisetu_auth.db                 │ │
+│    └───────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+================================================================
+KEY DATA FLOWS:
+- Authentication: SQLite (krishisetu_auth.db) - users, personas, roles
+- Crop Recommendations: Crop database (13 crops with agro parameters)
+- Marketplace: JSON file (marketplace_data.json) - listings + buyer demands
+- Weather: Open-Meteo API + cached fallback data
+- Chat History: SQLite (persistent across sessions)
+- all agro decisions use multilingual TRANSLATIONS (en/hi/mr)
+================================================================

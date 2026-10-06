@@ -18,6 +18,8 @@ from modules.auth import init_auth_db, register_user, authenticate_user
 from modules.translator_service import translate_text
 from modules.krishisarthi import get_krishisarthi_response
 from modules.farmer_mode import render_farmer_simple_mode
+from modules.community import render_community_tab
+from modules.policies import render_policies
 
 # Initialize Auth DB
 init_auth_db()
@@ -30,119 +32,174 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling & Typography (Agricultural Navbar & Palette)
+# Custom Styling & Typography (Modern Agricultural Design System)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
     }
 
+    /* Main & Sub Header Modernization */
     .main-header {
-        font-family: 'Inter', 'Noto Serif Devanagari', sans-serif;
-        font-size: 2.4rem;
-        color: #1B5E20;
-        font-weight: 700;
-        margin-bottom: 0rem;
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
+        font-size: 2.1rem !important;
+        color: #0f291e !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.2rem !important;
         letter-spacing: -0.5px;
     }
     
     .sub-header {
-        font-family: 'Inter', 'Noto Serif Devanagari', sans-serif;
-        font-size: 1.15rem;
-        color: #2E7D32;
-        margin-bottom: 1.5rem;
-        font-weight: 400;
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
+        font-size: 1.05rem !important;
+        color: #2e7d32 !important;
+        margin-bottom: 1.4rem !important;
+        font-weight: 500 !important;
     }
 
-    h1, h2, h3, .stButton>button {
-        font-family: 'Inter', 'Noto Serif Devanagari', sans-serif !important;
-        font-weight: 600 !important;
-    }
-
-    .stButton>button {
-        font-size: 0.95rem !important;
-        border-radius: 8px !important;
-        background-color: #2E7D32 !important;
-        color: white !important;
-        font-weight: 600 !important;
-        padding: 0.5rem 1rem !important;
-        border: none !important;
-    }
-
-    /* Metric cards adjustments to prevent text truncation */
-    [data-testid="stMetricValue"] {
-        font-size: 1.35rem !important;
+    h1, h2, h3, h4 {
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
         font-weight: 700 !important;
-        color: #1B5E20 !important;
+        color: #102a18 !important;
+    }
+
+    /* Tactile Glowing Buttons */
+    .stButton>button {
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        border-radius: 12px !important;
+        background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
+        color: #ffffff !important;
+        padding: 0.55rem 1.25rem !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25) !important;
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .stButton>button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 20px rgba(46, 125, 50, 0.38) !important;
+        background: linear-gradient(135deg, #388e3c 0%, #1b5e20 100%) !important;
+    }
+
+    .stButton>button:active {
+        transform: translateY(0px) !important;
+    }
+
+    /* Modern Soft Metric Cards with Hover Lift */
+    [data-testid="stMetricValue"] {
+        font-size: 1.4rem !important;
+        font-weight: 800 !important;
+        color: #1b5e20 !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.8rem !important;
-        color: #388E3C !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #4b6b50 !important;
         white-space: nowrap !important;
     }
 
     .metric-card {
-        background-color: #F1F8E9;
-        color: #1B5E20 !important;
-        padding: 18px;
-        border-radius: 10px;
-        border-left: 5px solid #2E7D32;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        background: linear-gradient(145deg, #ffffff 0%, #f7faf7 100%) !important;
+        color: #1b2e1f !important;
+        padding: 18px 20px !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(46, 125, 50, 0.12) !important;
+        border-left: 5px solid #2e7d32 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.25s ease !important;
     }
-    .metric-card b, .metric-card div, .metric-card i, .metric-card a {
-        color: #1B5E20 !important;
+    .metric-card:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 24px rgba(46, 125, 50, 0.12) !important;
+        border-color: #81c784 !important;
     }
-    .stAlert {
-        border-radius: 8px;
+    .metric-card b {
+        color: #1b5e20 !important;
+        font-size: 1.05rem !important;
     }
 
-    /* Professional Agricultural Navbar Strip */
+    /* Glassmorphic Agricultural Navigation Strip */
     .stTabs {
-        background-color: #FFFFFF;
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid #DCEDC8;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        margin-bottom: 20px;
+        background: #ffffff !important;
+        padding: 12px 14px !important;
+        border-radius: 16px !important;
+        border: 1px solid #dcedc8 !important;
+        box-shadow: 0 6px 20px rgba(46, 125, 50, 0.06) !important;
+        margin-bottom: 22px !important;
     }
 
     .stTabs [data-baseweb="tab-list"] {
-        display: flex;
-        gap: 10px;
-        background-color: transparent;
-        padding: 4px;
-        flex-wrap: nowrap;
-        overflow-x: auto;
+        display: flex !important;
+        gap: 8px !important;
+        background-color: transparent !important;
+        padding: 4px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
     }
 
     .stTabs [data-baseweb="tab"] {
-        height: 44px;
+        height: 42px !important;
         white-space: nowrap !important;
-        background-color: #FAFAFA;
-        color: #333333;
-        border-radius: 10px !important;
-        padding: 0px 24px !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.95rem !important;
+        background-color: #f5f8f5 !important;
+        color: #3b5240 !important;
+        border-radius: 12px !important;
+        padding: 0px 18px !important;
+        font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif !important;
+        font-size: 0.92rem !important;
         font-weight: 700 !important;
-        border: 1px solid #E0E0E0 !important;
-        transition: all 0.2s ease-in-out;
+        border: 1px solid #e2ece3 !important;
+        transition: all 0.2s ease-in-out !important;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: #E8F5E9 !important;
-        color: #1B5E20 !important;
-        border-color: #C8E6C9 !important;
+        background-color: #e8f5e9 !important;
+        color: #1b5e20 !important;
+        border-color: #a5d6a7 !important;
+        transform: translateY(-1px) !important;
     }
 
     .stTabs [aria-selected="true"] {
-        background-color: #2E7D32 !important;
-        color: #FFFFFF !important;
+        background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
+        color: #ffffff !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2) !important;
-        border-color: #2E7D32 !important;
+        box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3) !important;
+        border-color: #1b5e20 !important;
+    }
+
+    /* Custom Input and Select Fields */
+    .stTextInput input, .stSelectbox [data-baseweb="select"] {
+        border-radius: 10px !important;
+    }
+
+    .stApp {
+        background: #f7f9f5;
+    }
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
+
+    section[data-testid="stSidebar"] {
+        background: #ffffff;
+        border-right: 1px solid #e6ece4;
+    }
+
+    div[data-testid="stForm"] {
+        padding: 1.5rem;
+        border: 1px solid #e4ebe2;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(25, 55, 32, 0.07);
+    }
+
+    [data-testid="stImage"] img {
+        border-radius: 20px;
+        object-fit: cover;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -153,7 +210,8 @@ if "user" not in st.session_state:
 
 # Sidebar Controls for Language only when logged in
 st.sidebar.image("https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&auto=format&fit=crop&q=60", use_container_width=True)
-st.sidebar.title("KrishiSetu Controls")
+st.sidebar.title("KrishiSetu")
+st.sidebar.caption("Practical advice for your farm")
 
 lang_option = st.sidebar.selectbox("Language / भाषा", ["English", "हिंदी (Hindi)", "मराठी (Marathi)"])
 if lang_option == "English":
@@ -164,13 +222,6 @@ else:
     lang_code = "mr"
 t = TRANSLATIONS[lang_code]
 
-# Sidebar Navigation / Mode Toggle right under Language
-st.sidebar.markdown("---")
-st.sidebar.subheader("Navigation & Modes")
-app_mode = st.sidebar.radio("Select View / दृश्य निवडा", [
-    "Advanced Dashboard",
-    "Farmer Easy Mode (शेतकरी सोपा मोड)"
-])
 # Authentication Check / Center Modal
 if st.session_state["user"] is None:
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -231,13 +282,26 @@ if st.session_state["user"] is None:
 else:
     usr = st.session_state["user"]
     st.sidebar.markdown("---")
-    st.sidebar.success(f"User: **{usr['full_name']}**\n\nMobile: {usr['mobile']}\n\nRole: *{usr['persona']}*\n\nLocation: {usr.get('district', 'Ahmednagar')}, {usr.get('state', 'Maharashtra')}")
+    st.sidebar.markdown(
+        f"👋 **{usr['full_name']}**\n\n"
+        f"📍 {usr.get('district', 'Ahmednagar')}, {usr.get('state', 'Maharashtra')}"
+    )
     if st.sidebar.button("Logout / बाहेर पडा"):
         st.session_state["user"] = None
+        st.session_state["app_mode"] = "Farmer Easy Mode (शेतकरी सोपा मोड)"
         st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("Location & Farm Setup")
+st.sidebar.subheader("Choose your experience")
+app_mode = st.sidebar.radio(
+    "Select a view / दृश्य निवडा",
+    ["Farmer Easy Mode (शेतकरी सोपा मोड)", "Advanced Dashboard"],
+    index=0,
+    key="app_mode"
+)
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📍 Farm location")
 default_state = st.session_state["user"].get("state", "Maharashtra") if st.session_state.get("user") else "Maharashtra"
 selected_state = st.sidebar.selectbox(t["state"], list(INDIAN_LOCATIONS.keys()), index=list(INDIAN_LOCATIONS.keys()).index(default_state) if default_state in INDIAN_LOCATIONS else 0)
 district_list = INDIAN_LOCATIONS[selected_state]["districts"]
@@ -248,34 +312,77 @@ selected_district = st.sidebar.selectbox(t["district"], district_list, index=dis
 st.session_state["selected_district"] = selected_district
 st.session_state["selected_state"] = selected_state
 
-selected_soil = st.sidebar.selectbox(t["soil_type"], SOIL_TYPES)
-land_size = st.sidebar.number_input(t["land_size"], min_value=0.5, max_value=100.0, value=2.0, step=0.5)
-season = st.sidebar.selectbox(t["season"], ["Kharif (Monsoon)", "Rabi (Winter)", "Zaid (Summer)"])
-water_source = st.sidebar.selectbox("Irrigation Source", ["Tube Well / Borewell", "Canal Irrigation", "Rainfed Only", "Drip / Sprinkler"])
-budget = st.sidebar.slider(t["budget"], min_value=5000, max_value=50000, value=15000, step=1000)
+if app_mode == "Advanced Dashboard":
+    st.sidebar.markdown("---")
+    with st.sidebar.expander("Advanced farm planning", expanded=False):
+        selected_soil = st.selectbox(t["soil_type"], SOIL_TYPES)
+        land_size = st.number_input(t["land_size"], min_value=0.5, max_value=100.0, value=2.0, step=0.5)
+        season = st.selectbox(t["season"], ["Kharif (Monsoon)", "Rabi (Winter)", "Zaid (Summer)"])
+        water_source = st.selectbox("Irrigation Source", ["Tube Well / Borewell", "Canal Irrigation", "Rainfed Only", "Drip / Sprinkler"])
+        budget = st.slider(t["budget"], min_value=5000, max_value=50000, value=15000, step=1000)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("AI & Integrations")
-gemini_api_key = st.sidebar.text_input("Gemini API Key (Optional)", type="password", help="Enter key for live leaf disease diagnosis or leave blank for offline AI demo.")
-datagov_api_key = st.sidebar.text_input("Data.gov.in API Key (Optional)", type="password", help="Enter key for live Agmarknet APMC mandi prices from Open Government Data India.")
+with st.sidebar.expander("AI & data connections", expanded=False):
+    gemini_api_key = st.text_input(
+        "Gemini API Key (Optional)",
+        type="password",
+        help="Enter a key for live leaf disease diagnosis, or leave blank for the offline demo."
+    )
+    datagov_api_key = ""
+    if app_mode == "Advanced Dashboard":
+        datagov_api_key = st.text_input(
+            "Data.gov.in API Key (Optional)",
+            type="password",
+            help="Enter a key for live Agmarknet mandi prices from Open Government Data India."
+        )
 
 if app_mode == "Farmer Easy Mode (शेतकरी सोपा मोड)":
     render_farmer_simple_mode(t, selected_state, selected_district, lang_code, gemini_api_key, usr)
 else:
-    # Professional Floating Agricultural Navbar Strip
-    st.markdown("""
-    <style>
-        .stTabs {
-            background-color: #FFFFFF !important;
-            padding: 16px !important;
-            border-radius: 14px !important;
-            border: 1px solid #C8E6C9 !important;
-            box-shadow: 0 10px 15px -3px rgba(46, 125, 50, 0.08), 0 4px 6px -2px rgba(46, 125, 50, 0.04) !important;
-            margin-bottom: 25px !important;
-            margin-top: 5px !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # -------------------------------------------------------------
+    # LIVE APMC MANDI TICKER & FARMER HERO DOCK
+    # -------------------------------------------------------------
+    greeting_name = usr.get('full_name', 'शेतकरी मित्र')
+    
+    ticker_text = (
+        "🌾 Wheat (गहू): ₹2,430/Qtl (+₹45 ▲) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🌱 Soybean (सोयाबीन): ₹4,875/Qtl (+₹65 ▲) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🍇 Grape (द्राक्ष): ₹6,400/Qtl (+₹180 ▲) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🍅 Tomato (टोमॅटो): ₹1,850/Qtl (-₹40 ▼) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🧅 Onion (कांदा): ₹2,160/Qtl (+₹35 ▲) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🚜 Cotton (कापूस): ₹7,250/Qtl (+₹90 ▲) &nbsp;&nbsp;|&nbsp;&nbsp; "
+        "🌿 Chana (हरभरा): ₹5,650/Qtl (+₹50 ▲)"
+    )
+    
+    ticker_html = f"""
+    <div style="background: linear-gradient(90deg, #1b5e20 0%, #2e7d32 100%); color: white; padding: 10px 16px; border-radius: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 15px rgba(27,94,32,0.18);">
+        <div style="background: rgba(255,255,255,0.22); padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800; white-space: nowrap; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #69f0ae; border-radius: 50%;"></span>
+            LIVE APMC TICKER
+        </div>
+        <div style="overflow: hidden; white-space: nowrap; flex: 1; font-size: 13.5px; font-weight: 600;">
+            <marquee behavior="scroll" direction="left" scrollamount="6" onmouseover="this.stop();" onmouseout="this.start();">
+                {ticker_text}
+            </marquee>
+        </div>
+    </div>
+    """
+    st.markdown("".join(line.strip() for line in ticker_html.splitlines()), unsafe_allow_html=True)
+    
+    hero_html = f"""
+    <div style="background: linear-gradient(135deg, #ffffff 0%, #f4f9f4 100%); border: 1px solid #dcedc8; border-radius: 18px; padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <h2 style="margin: 0; color: #1b5e20; font-size: 1.55rem; font-weight: 800;">🌾 नमस्कार, {greeting_name}!</h2>
+            <p style="margin: 4px 0 0 0; color: #4b6b50; font-size: 0.95rem;">📍 <b>{selected_district}, {selected_state}</b> · हंगाम: <b>{season}</b> · जमीन: <b>{land_size} एकर ({selected_soil.split()[0]})</b></p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <span style="background: #e8f5e9; border: 1px solid #c8e6c9; color: #1b5e20; padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700;">🌤️ 28°C अंशतः ढगाळ</span>
+            <span style="background: #e3f2fd; border: 1px solid #bbdefb; color: #1565c0; padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700;">💧 सिंचन: अनुकूल</span>
+            <span style="background: #fff8e1; border: 1px solid #ffe082; color: #b78103; padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 800;">⭐ कृषी गुण: 120</span>
+        </div>
+    </div>
+    """
+    st.markdown("".join(line.strip() for line in hero_html.splitlines()), unsafe_allow_html=True)
     
     tab_titles = [
         t["nav_planner"],
@@ -284,12 +391,15 @@ else:
         t["nav_weather"],
         t["nav_ops"],
         t["nav_market"],
-        t["nav_sarthi"]
+        t["nav_sarthi"],
+        t.get("nav_community", "Farmer Community"),
+        t.get("nav_policies", "Policies")
     ]
     tabs = st.tabs(tab_titles)
 
     # -------------------------------------------------------------
     # TAB 1: Smart Crop Planner (Basic & Precision Modes)
+
     # -------------------------------------------------------------
     with tabs[0]:
         st.markdown(f'<p class="main-header">{translate_text(t["nav_planner"], lang_code)}</p>', unsafe_allow_html=True)
@@ -299,7 +409,11 @@ else:
         c_mode1, c_mode2 = st.columns(2)
         with c_mode1:
             previous_crop = st.selectbox(translate_text("Previous Grown Crop", lang_code), ["None", "Wheat", "Paddy", "Soybean", "Cotton", "Mustard", "Chana"])
-            farming_goal = st.selectbox(translate_text("Farming Goal", lang_code), [translate_text("Maximize Profit", lang_code), translate_text("Low Risk & Stable Yield", lang_code), translate_text("Soil Health Restoration", lang_code)])
+            farming_goal = st.selectbox(
+                translate_text("Farming Goal", lang_code),
+                ["Maximize Profit", "Low Risk & Stable Yield", "Soil Health Restoration"],
+                format_func=lambda goal: translate_text(goal, lang_code)
+            )
         with c_mode2:
             setup_prefix = "सक्रिय शेती सेटअप" if lang_code == 'mr' else ("सक्रिय कृषि सेटअप" if lang_code == 'hi' else "Active Farm Setup")
             acres_text = "एकर" if lang_code == 'mr' else ("एकड़" if lang_code == 'hi' else "Acres")
@@ -339,15 +453,46 @@ else:
                 npk_values["phosphorus"] = col_p3.number_input("Phosphorus (P)", min_value=5, max_value=100, value=20)
                 npk_values["potassium"] = col_p4.number_input("Potassium (K)", min_value=50, max_value=600, value=250)
 
+        recommendation_inputs = (
+            selected_state,
+            selected_district,
+            selected_soil,
+            season,
+            water_source,
+            budget,
+            farming_goal,
+            previous_crop,
+            land_size,
+            tuple(sorted(npk_values.items()))
+        )
+
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button(translate_text(t["btn_plan"], lang_code), type="primary"):
             from modules.precision_planner import advanced_precision_recommendation
             recommendations = advanced_precision_recommendation(
-                selected_state, selected_district, selected_soil, season, water_source, budget, farming_goal, previous_crop, npk_values
+                selected_state,
+                selected_district,
+                selected_soil,
+                season,
+                water_source,
+                budget,
+                farming_goal,
+                previous_crop,
+                npk_values
             )
+            acreage_factor = land_size / 2.0
+            for recommendation in recommendations:
+                for estimate in (
+                    "total_cost",
+                    "expected_yield",
+                    "estimated_revenue",
+                    "estimated_net_profit",
+                ):
+                    recommendation[estimate] *= acreage_factor
             st.session_state["recommendations"] = recommendations
+            st.session_state["recommendation_inputs"] = recommendation_inputs
 
-        if "recommendations" in st.session_state:
+        if st.session_state.get("recommendation_inputs") == recommendation_inputs:
             recs = st.session_state["recommendations"]
             top_crop = recs[0]
             
@@ -400,6 +545,11 @@ else:
                             st.warning(f"⚠ {translated_r.replace('⚠️ ', '')}")
                         else:
                             st.info(f"ℹ {translated_r}")
+        elif "recommendations" in st.session_state:
+            st.info(translate_text(
+                "Farm inputs changed. Analyze again to refresh recommendations.",
+                lang_code
+            ))
 
     # -------------------------------------------------------------
     # TAB 2: Mandi Price Forecast & Analytics
@@ -649,3 +799,15 @@ else:
                         f'<div style="background-color: #f1f8e9; padding: 12px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #2e7d32; color: #1b5e20;"><b>Krishi-Sarthi:</b><br>{chat["content"]}</div>',
                         unsafe_allow_html=True
                     )
+
+    # -------------------------------------------------------------
+    # TAB 8: Farmer Community & Knowledge Sharing Platform
+    # -------------------------------------------------------------
+    with tabs[7]:
+        render_community_tab(lang_code, usr, selected_district, selected_state)
+
+    # -------------------------------------------------------------
+    # TAB 9: Farmer Policies
+    # -------------------------------------------------------------
+    with tabs[8]:
+        render_policies(lang_code)

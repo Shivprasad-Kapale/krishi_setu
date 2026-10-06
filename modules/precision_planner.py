@@ -5,6 +5,37 @@ Handles manual NPK/pH entry and OCR/Vision extraction from uploaded soil test re
 
 import streamlit as st
 
+
+def _soil_group(soil_name):
+    soil_name = soil_name.casefold()
+    soil_groups = {
+        "alluvial": ("alluvial", "जलोढ़"),
+        "black": ("black soil", "regur", "काली मिट्टी"),
+        "red": ("red & yellow", "red soil", "लाल", "पीली"),
+        "laterite": ("laterite", "जांभा", "जांभळी"),
+        "sandy": ("sandy", "arid", "बलुई", "रेतीली"),
+        "loam": ("clay loam", "light loam", "दोमट", "चिकण")
+    }
+    return next(
+        (group for group, aliases in soil_groups.items() if any(alias in soil_name for alias in aliases)),
+        soil_name
+    )
+
+
+def _season_names(value):
+    value = value.casefold()
+    season_aliases = {
+        "kharif": ("kharif", "monsoon", "खरीफ", "खरीप"),
+        "rabi": ("rabi", "winter", "रबी", "रब्बी"),
+        "zaid": ("zaid", "summer", "ज़ायद", "जायद", "उन्हाळी")
+    }
+    return {
+        season
+        for season, aliases in season_aliases.items()
+        if any(alias in value for alias in aliases)
+    }
+
+
 def parse_soil_report(uploaded_file, api_key=None):
     """
     Parses uploaded soil test report (Image or PDF) using Gemini Vision if key provided.
@@ -50,72 +81,153 @@ def parse_soil_report(uploaded_file, api_key=None):
             
     return extracted_data
 
-def advanced_precision_recommendation(state, district, soil_type, season, water_source, budget, goal, previous_crop, npk_values):
+def advanced_precision_recommendation(
+    state,
+    district,
+    soil_type,
+    season,
+    water_source,
+    budget,
+    goal,
+    previous_crop,
+    npk_values,
+    land_size=2.0
+):
     """
     Refined crop recommendation engine integrating precise NPK, pH, organic carbon,
     crop rotation rules, goal weighting, and budget constraints.
     """
     from data.crops_database import CROP_DATABASE
     
-    ph = npk_values.get("ph", 7.0)
-    n = npk_values.get("nitrogen", 200)
-    p = npk_values.get("phosphorus", 20)
-    k = npk_values.get("potassium", 250)
-    
+    ph = float(npk_values.get("ph", 7.0))
+    nitrogen = float(npk_values.get("nitrogen", 200))
+    phosphorus = float(npk_values.get("phosphorus", 20))
+    potassium = float(npk_values.get("potassium", 250))
+    selected_soil_group = _soil_group(soil_type)
+    selected_seasons = _season_names(season)
+    available_water = {
+        "Rainfed Only": 400,
+        "Tube Well / Borewell": 900,
+        "Canal Irrigation": 1200,
+        "Drip / Sprinkler": 700
+    }.get(water_source, 600)
+
+    goal_aliases = {
+        "अधिकतम लाभ": "Maximize Profit",
+        "अधिकतम मुनाफा": "Maximize Profit",
+        "अधिकतम नफा": "Maximize Profit",
+        "सर्वाधिक नफा": "Maximize Profit",
+        "कम जोखिम और स्थिर उपज": "Low Risk & Stable Yield",
+        "कमी जोखीम आणि स्थिर उत्पन्न": "Low Risk & Stable Yield",
+        "सुरक्षित आणि स्थिर उत्पन्न": "Low Risk & Stable Yield",
+        "मृदा स्वास्थ्य सुधार": "Soil Health Restoration",
+        "जमीन आरोग्य सुधारणा": "Soil Health Restoration",
+        "जमीन सुधारणा": "Soil Health Restoration"
+    }
+    goal = goal_aliases.get(goal, goal)
+
     recommendations = []
+    season_matches = [
+        crop for crop in CROP_DATABASE
+        if "all season" in crop["season"].casefold()
+        or bool(_season_names(crop["season"]) & selected_seasons)
+    ]
+    candidate_crops = season_matches or [
+        crop for crop in CROP_DATABASE
+        if "all season" in crop["season"].casefold()
+    ]
+    if not candidate_crops:
+        raise ValueError(f"No crops are available for the selected season: {season!r}")
+    max_profit_per_acre = max(
+        crop["avg_yield_quintals_per_acre"] * crop["msp_or_base_price"] - crop["cost_per_acre"]
+        for crop in candidate_crops
+    )
     
-    for crop in CROP_DATABASE:
-        score = 50.0
+    for crop in candidate_crops:
         reasons = []
-        
-        # 1. Soil & pH Compatibility
-        if soil_type in crop["suitable_soils"]:
-            score += 20
-            reasons.append("Optimal soil type match for root penetration.")
-        else:
-            score -= 10
-            reasons.append("Soil type is marginal; corrective amendments recommended.")
-            
+
+        crop_seasons = _season_names(crop["season"])
+        season_score = (
+            100 if "all season" in crop["season"].casefold()
+            else len(selected_seasons & crop_seasons) / max(1, len(selected_seasons)) * 100
+        )
+        soil_matches = selected_soil_group in {
+            _soil_group(suitable_soil) for suitable_soil in crop["suitable_soils"]
+        }
+        soil_score = 100 if soil_matches else 35
+        reasons.append(
+            "Soil type matches this crop."
+            if soil_matches else "Soil type is not an exact match; check local agronomic advice."
+        )
+
         if 6.0 <= ph <= 7.5:
-            score += 15
-            reasons.append(f"Soil pH ({ph}) is within the ideal neutral range for nutrient availability.")
+            ph_score = 100
+            reasons.append(f"Soil pH ({ph}) is within the preferred range.")
+        elif 5.5 <= ph <= 8.0:
+            ph_score = 65
+            reasons.append(f"Soil pH ({ph}) is near the preferred range.")
         else:
-            score -= 10
-            reasons.append(f"Soil pH ({ph}) is slightly acidic/alkaline; gypsum or lime application suggested.")
-            
-        # 2. NPK Nutrient Balance
-        if n >= 180 and crop["id"] in ["wheat", "paddy", "maize"]:
-            score += 15
-            reasons.append(f"Nitrogen level ({n} kg/ha) supports high cereal grain development.")
-        elif p >= 25 and crop["id"] in ["chana", "soybean", "mustard"]:
-            score += 15
-            reasons.append(f"Phosphorus level ({p} kg/ha) is favorable for pulse/oilseed pod formation.")
-            
-        # 3. Crop Rotation Logic (Avoid consecutive same family)
-        if previous_crop and previous_crop.lower() in crop["name_en"].lower():
-            score -= 25
-            reasons.append(f"Warning: Cultivating {crop['name_en']} consecutively after {previous_crop} increases disease risk. Crop rotation advised.")
+            ph_score = 30
+            reasons.append(f"Soil pH ({ph}) is outside the preferred range.")
+
+        if crop["id"] in {"wheat", "paddy", "maize"}:
+            nutrient_score = min(100, nitrogen / 180 * 100)
+            reasons.append(f"Nitrogen level ({nitrogen:g} kg/ha) is included in this ranking.")
         else:
-            score += 10
-            reasons.append("Favorable crop rotation break to prevent soil pathogen build-up.")
-            
-        # 4. Goal Alignment (High Profit vs Low Risk vs Soil Restoration)
-        if goal == "Maximize Profit" or goal == "अधिकतम नफा":
-            if crop["market_demand_trend"] in ["Very High", "High Export Demand", "High & Stable"]:
-                score += 20
-                reasons.append("Aligned with your goal: High market demand and superior ROI potential.")
-        elif goal == "Low Risk & Stable Yield" or goal == "सुरक्षित आणि स्थिर उत्पन्न":
-            if crop["risk_level"] == "Low":
-                score += 20
-                reasons.append("Aligned with your goal: Low risk profile with stable MSP/base returns.")
-        elif goal == "Soil Health Restoration" or goal == "जमीन सुधारणा":
-            if crop["id"] in ["chana", "soybean"]:
-                score += 25
-                reasons.append("Aligned with your goal: Leguminous crop fixes atmospheric nitrogen, restoring soil fertility.")
-                
-        # Financial Calculations
-        total_cost = crop["cost_per_acre"] * 2 # default 2 acres reference
-        expected_yield_total = crop["avg_yield_quintals_per_acre"] * 2
+            nutrient_score = min(100, phosphorus / 25 * 100)
+            reasons.append(f"Phosphorus level ({phosphorus:g} kg/ha) is included in this ranking.")
+        potassium_score = min(100, potassium / 150 * 100)
+        soil_test_score = ph_score * 0.5 + nutrient_score * 0.3 + potassium_score * 0.2
+
+        affordable_score = min(100, budget / crop["cost_per_acre"] * 100) if budget > 0 else 0
+        if affordable_score == 100:
+            reasons.append("Selected budget covers the estimated cost per acre.")
+        else:
+            reasons.append(
+                f"Estimated cost is ₹{crop['cost_per_acre']:,}/acre, above the selected budget."
+            )
+
+        water_score = min(100, available_water / crop["min_water_mm"] * 100)
+        if water_score == 100:
+            reasons.append("Selected water source meets the crop's estimated minimum requirement.")
+        else:
+            reasons.append("Selected water source may not meet the crop's estimated minimum requirement.")
+
+        previous_crop_id = previous_crop.casefold().split(" (")[0].strip() if previous_crop else ""
+        if previous_crop_id not in {"", "none"} and previous_crop_id == crop["id"]:
+            rotation_score = 0
+            reasons.append("Avoid repeating the same crop; rotation is recommended.")
+        else:
+            rotation_score = 100
+
+        profit_per_acre = (
+            crop["avg_yield_quintals_per_acre"] * crop["msp_or_base_price"]
+            - crop["cost_per_acre"]
+        )
+        profit_score = max(0, profit_per_acre / max_profit_per_acre * 100)
+        risk_score = {"Low": 100, "Medium": 65, "High": 30}.get(crop["risk_level"], 50)
+        restoration_score = 100 if crop["id"] in {"chana", "soybean"} else 40
+
+        if goal == "Low Risk & Stable Yield":
+            goal_score = risk_score
+        elif goal == "Soil Health Restoration":
+            goal_score = restoration_score
+        else:
+            goal_score = profit_score
+        reasons.append(f"Risk level: {crop['risk_level']}.")
+
+        score = (
+            soil_score * 0.20
+            + season_score * 0.20
+            + affordable_score * 0.15
+            + water_score * 0.15
+            + soil_test_score * 0.15
+            + rotation_score * 0.05
+            + goal_score * 0.10
+        )
+
+        total_cost = crop["cost_per_acre"] * land_size
+        expected_yield_total = crop["avg_yield_quintals_per_acre"] * land_size
         estimated_revenue = expected_yield_total * crop["msp_or_base_price"]
         estimated_net_profit = estimated_revenue - total_cost
         roi_percentage = (estimated_net_profit / total_cost) * 100 if total_cost > 0 else 0
@@ -124,7 +236,7 @@ def advanced_precision_recommendation(state, district, soil_type, season, water_
             "crop_id": crop["id"],
             "name": crop["name_en"],
             "name_hi": crop["name_hi"],
-            "score": round(max(10, min(100, score)), 1),
+            "score": round(max(0, min(100, score)), 1),
             "reasons": reasons,
             "cost_per_acre": crop["cost_per_acre"],
             "total_cost": total_cost,
